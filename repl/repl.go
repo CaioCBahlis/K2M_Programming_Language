@@ -1,14 +1,13 @@
 package repl
 
-
 import (
+	"MyInterpreter/evaluator"
+	"MyInterpreter/lexer"
+	"MyInterpreter/parser"
 	"bufio"
 	"fmt"
 	"io"
-	"MyInterpreter/lexer"
-	"MyInterpreter/parser"
 )
-
 
 const PROMPT = ">>"
 
@@ -24,18 +23,15 @@ const MONKEY_FACE = `
 					\ \ '~' / /
 					'._ '-=-' _.'
 					'-----'
- ` 
+ `
 
-
-
-
-func Start(in io.Reader, out io.Writer){
+func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 
 	for {
 		fmt.Printf(PROMPT)
 		scanned := scanner.Scan()
-		if !scanned{
+		if !scanned {
 			return
 		}
 
@@ -44,20 +40,23 @@ func Start(in io.Reader, out io.Writer){
 		p := parser.NewParser(l)
 		program := p.ParseProgram()
 
-		if len(p.Errors()) > 1{
+		if len(p.Errors()) != 0 {
 			printParserErrors(out, p.Errors())
 			continue
 		}
-		io.WriteString(out, program.String())
-		io.WriteString(out, "\n")
+		evaluated := evaluator.Eval(program)
+		if evaluated != nil {
+			io.WriteString(out, evaluated.Inspect())
+			io.WriteString(out, "\n")
+		}
+
 	}
 }
 
-
-func printParserErrors(out io.Writer, errors []string){
+func printParserErrors(out io.Writer, errors []string) {
 	io.WriteString(out, MONKEY_FACE)
 	io.WriteString(out, "WOMP WOMP! PARSER IS NOT HAPPY")
-	for _, msg := range errors{
+	for _, msg := range errors {
 		io.WriteString(out, "\t"+msg+"\n")
 	}
 }
