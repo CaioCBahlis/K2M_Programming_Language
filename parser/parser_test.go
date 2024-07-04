@@ -80,9 +80,9 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 
 func TestReturnStatements(t *testing.T) {
 	input := `
-	return = 5;
-	return = 10;
-	return = 99322;
+	return 5;
+	return 10;
+	return 99322;
 	`
 
 	l := lexer.NewLexer(input)
