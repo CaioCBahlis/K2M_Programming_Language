@@ -33,37 +33,21 @@ func (l *Lexer) NextToken() token.Token {
 	switch l.ch {
 
 	case '=':
-		//TO DO Abstraction that gets double chars symbols
-		if l.peekChar() == '=' {
-			ch := l.ch
-			l.readChar()
-			tok = token.Token{Type: token.EQ, Literal: string(ch) + string(l.ch)}
-		} else {
-			tok = newToken(token.ASSIGN, l.ch)
-		}
+		//TODO Abstraction that gets double chars symbols
+		// Done :)
+		tok = l.GetMultiCharToken(token.ASSIGN, token.EQ)
 	case '+':
-		if l.peekChar() == '=' {
-			ch := l.ch
-			l.readChar()
-			tok = token.Token{Type: token.PE, Literal: string(ch) + string(l.ch)}
-		} else {
-			tok = token.Token{Type: token.PLUS, Literal: string(l.ch)}
-		}
+		tok = l.GetMultiCharToken(token.PLUS, token.PE)
 	case '-':
-		tok = newToken(token.MINUS, l.ch)
+		tok = l.GetMultiCharToken(token.MINUS, token.LE)
 	case '!':
-		//TO DO Abstraction that gets double chars symbols
-		if l.peekChar() == '=' {
-			ch := l.ch
-			l.readChar()
-			tok = token.Token{Type: token.NOT_EQ, Literal: string(ch) + string(l.ch)}
-		} else {
-			tok = newToken(token.BANG, l.ch)
-		}
+		//TODO Abstraction that gets double chars symbols
+		// DONE :)
+		tok = l.GetMultiCharToken(token.BANG, token.NOT_EQ)
 	case '/':
-		tok = newToken(token.SLASH, l.ch)
+		tok = l.GetMultiCharToken(token.SLASH, token.DE)
 	case '*':
-		tok = newToken(token.ASTERISK, l.ch)
+		tok = l.GetMultiCharToken(token.ASTERISK, token.ME, token.EXPONENT)
 	case '<':
 		tok = newToken(token.LT, l.ch)
 	case '>':
@@ -168,4 +152,15 @@ func isLetter(ch byte) bool {
 
 func isDigit(ch byte) bool {
 	return '0' <= ch && ch <= '9'
+}
+
+func (l *Lexer) GetMultiCharToken(CurChar token.TokenType, ExpectChar ...token.TokenType) token.Token {
+	for _, tokens := range ExpectChar {
+		if l.peekChar() == tokens[1] {
+			ch := l.ch
+			l.readChar()
+			return token.Token{Type: tokens, Literal: string(ch) + string(l.ch)}
+		}
+	}
+	return token.Token{Type: CurChar, Literal: string(l.ch)}
 }

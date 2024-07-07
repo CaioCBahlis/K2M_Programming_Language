@@ -49,6 +49,10 @@ const (
 	EQ       = "=="
 	NOT_EQ   = "!="
 	PE       = "+="
+	ME       = "*="
+	DE       = "/="
+	LE       = "-="
+	EXPONENT = "**"
 
 	COMMA     = ","
 	SEMICOLON = ";"

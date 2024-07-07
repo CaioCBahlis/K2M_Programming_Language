@@ -15,8 +15,9 @@ const (
 	LESSGREATER
 	SUM
 	PRODUCT
-	PREFIX
-	CALL
+	EXPONENT = 6
+	PREFIX   = 7
+	CALL     = 8
 )
 
 var precedences = map[token.TokenType]int{
@@ -26,6 +27,7 @@ var precedences = map[token.TokenType]int{
 	token.GT:       LESSGREATER,
 	token.PLUS:     SUM,
 	token.MINUS:    SUM,
+	token.EXPONENT: EXPONENT,
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
@@ -72,6 +74,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
+	p.registerInfix(token.EXPONENT, p.parseInfixExpression)
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
 	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
@@ -125,8 +128,8 @@ func (p *Parser) parseStatement() ast.Statement {
 	// Expressions are simply parsed token by token until we find the semicolon
 
 	if p.curToken.Type == token.IDENT {
-		if p.PeekTokenIs(token.PE) {
-			return p.parsePEStatement()
+		if p.PeekTokenIs(token.PE, token.LE, token.ME, token.DE) {
+			return p.parseCompoundAssignStatement()
 		}
 	}
 
@@ -445,8 +448,13 @@ func (p *Parser) curTokenIs(t token.TokenType) bool {
 	return p.curToken.Type == t
 }
 
-func (p *Parser) PeekTokenIs(t token.TokenType) bool {
-	return p.peekToken.Type == t
+func (p *Parser) PeekTokenIs(t ...token.TokenType) bool {
+	for _, tokens := range t {
+		if p.peekToken.Type == tokens {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *Parser) expectPeek(t token.TokenType) bool {
@@ -475,9 +483,9 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
 }
 
-func (p *Parser) parsePEStatement() ast.Statement {
+func (p *Parser) parseCompoundAssignStatement() ast.Statement {
 
-	pleql := &ast.PE{Token: p.curToken}
+	pleql := &ast.CompoundAssignment{Token: p.curToken}
 	if p.curToken.Type == token.IDENT {
 		pleql.Variable = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	} else {
@@ -487,12 +495,7 @@ func (p *Parser) parsePEStatement() ast.Statement {
 
 	p.ShiftToken()
 
-	if p.curToken.Literal == token.PE {
-		pleql.Operator = p.curToken.Literal
-	} else {
-		msg := fmt.Sprintf("expected token.PE, got %s", p.curToken.Type)
-		p.errors = append(p.errors, msg)
-	}
+	pleql.Operator = p.curToken.Literal
 
 	p.ShiftToken()
 

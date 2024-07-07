@@ -3,6 +3,7 @@ package evaluator
 import (
 	"MyInterpreter/ast"
 	"MyInterpreter/object"
+	"MyInterpreter/packages/mymath"
 	"fmt"
 )
 
@@ -74,7 +75,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.StringLiteral:
 		return &object.String{Value: node.Value}
 
-	case *ast.PE:
+	case *ast.CompoundAssignment:
 		value := Eval(node.Value, env).(*object.Integer)
 		if isError(value) {
 			return value
@@ -86,7 +87,16 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return value
 		}
 
-		env.Set(node.Variable.String(), &object.Integer{Value: value.Value + val.(*object.Integer).Value})
+		switch node.Operator {
+		case "+=":
+			env.Set(node.Variable.String(), &object.Integer{Value: val.(*object.Integer).Value + value.Value})
+		case "-=":
+			env.Set(node.Variable.String(), &object.Integer{Value: val.(*object.Integer).Value - value.Value})
+		case "*=":
+			env.Set(node.Variable.String(), &object.Integer{Value: val.(*object.Integer).Value * value.Value})
+		case "/=":
+			env.Set(node.Variable.String(), &object.Integer{Value: val.(*object.Integer).Value / value.Value})
+		}
 
 	}
 
@@ -139,7 +149,7 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 		return evalIntegerInfixExpression(operator, left, right)
 	case right.Type() == object.STRING_OBJ && left.Type() == object.STRING_OBJ:
 		return evalStringInfixExpression(operator, left, right)
-	case operator == "*":
+	case operator == "*": //This does not handle int multiplication, this is responsible for multiplication between strings and integers
 		return evalStringInfixExpression(operator, left, right)
 	case operator == "==":
 		return nativeBoolToBooleanObject(left == right)
@@ -165,6 +175,8 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 		return &object.Integer{Value: leftVal * rightVal}
 	case "/":
 		return &object.Integer{Value: leftVal / rightVal}
+	case "**":
+		return &object.Integer{Value: int64(mymath.Exponentiate(leftVal, rightVal))}
 	case ">":
 		return nativeBoolToBooleanObject(leftVal > rightVal)
 	case "<":
@@ -289,12 +301,15 @@ func isError(obj object.Object) bool {
 
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
 
-	val, ok := env.Get(node.Value)
-	if !ok {
-		return newError("identifier not found: " + node.Value)
+	if val, ok := env.Get(node.Value); ok {
+		return val
 	}
 
-	return val
+	if builtin, ok := builtins[node.Value]; ok {
+		return builtin
+	}
+
+	return newError("identifier not found: " + node.Value)
 }
 
 func evalExpressions(exps []ast.Expression, env *object.Environment) []object.Object {
@@ -312,21 +327,27 @@ func evalExpressions(exps []ast.Expression, env *object.Environment) []object.Ob
 }
 
 func applyFunction(fn object.Object, args []object.Object) object.Object {
-	function, ok := fn.(*object.Function)
-	if !ok {
-		return newError("not a function: %s", fn.Type())
+
+	switch fn := fn.(type) {
+
+	case *object.Function:
+		extendedEnv := extendFunctionEnv(fn, args) // add parameters as local scope vars
+		evaluated := Eval(fn.Body, extendedEnv)    //evaluate BlockStatement
+		return unwrapReturnValue(evaluated)
+
+	case *object.Builtin:
+		return fn.Fn(args...)
+	default:
+		return newError("not a function %s", fn.Type())
 	}
 
-	extendedEnv := extendFunctionEnv(function, args)
-	evaluated := Eval(function.Body, extendedEnv)
-	return unwrapReturnValue(evaluated)
 }
 
 func extendFunctionEnv(fn *object.Function, args []object.Object) *object.Environment {
 	env := object.ScopedEnv(fn.Env)
 
 	for paramIdx, param := range fn.Parameters {
-		env.Set(param.Value, args[paramIdx])
+		env.Set(param.Value, args[paramIdx]) //add parameters as local variables
 	}
 
 	return env

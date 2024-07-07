@@ -283,16 +283,16 @@ func (s *StringLiteral) ExpressionNode()      {}
 func (s *StringLiteral) TokenLiteral() string { return s.Token.Literal }
 func (s *StringLiteral) String() string       { return s.Token.Literal }
 
-type PE struct {
+type CompoundAssignment struct {
 	Token    token.Token
 	Variable *Identifier
 	Operator string
 	Value    Expression
 }
 
-func (pe *PE) StatementNode()       {}
-func (pe *PE) TokenLiteral() string { return pe.Token.Literal }
-func (pe *PE) String() string {
+func (pe *CompoundAssignment) StatementNode()       {}
+func (pe *CompoundAssignment) TokenLiteral() string { return pe.Token.Literal }
+func (pe *CompoundAssignment) String() string {
 	var out bytes.Buffer
 
 	out.WriteString(pe.TokenLiteral())
