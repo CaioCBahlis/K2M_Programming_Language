@@ -2,12 +2,11 @@ package lexer
 
 import (
 	"MyInterpreter/token"
-	"testing"
 	"fmt"
+	"testing"
 )
 
-
-func TestNextToken(t *testing.T){
+func TestNextToken(t *testing.T) {
 
 	input := `
 			let five = 5;
@@ -25,10 +24,12 @@ func TestNextToken(t *testing.T){
 			}
 			10 == 10;
 			10 != 9;
+			"foobar"
+			"foo bar"
 			`
 
-	tests := []struct{
-		expectedType token.TokenType
+	tests := []struct {
+		expectedType    token.TokenType
 		expectedLiteral string
 	}{
 		{token.LET, "let"},
@@ -104,28 +105,26 @@ func TestNextToken(t *testing.T){
 		{token.NOT_EQ, "!="},
 		{token.INT, "9"},
 		{token.SEMICOLON, ";"},
+		{token.STRING, "foobar"},
+		{token.STRING, "foo bar"},
 		{token.EOF, ""},
 	}
-		
-	
-		
 
 	l := NewLexer(input)
 
-	for i, tt := range tests{
+	for i, tt := range tests {
 		tok := l.NextToken() //Gets next char tokenized
 		fmt.Println(i, tok, l.readPosition)
 
-		if tok.Type != tt.expectedType{
+		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
 				i, tt.expectedType, tok.Type)
 		}
-		
-		if tok.Literal != tt.expectedLiteral{
+
+		if tok.Literal != tt.expectedLiteral {
 			t.Fatalf("tests[%d] - literal wrong, expected=%q, got=%q",
 				i, tt.expectedLiteral, tok.Literal)
 		}
 	}
 
 }
-

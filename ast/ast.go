@@ -273,3 +273,33 @@ func (ce *CallExpression) String() string {
 
 	return out.String()
 }
+
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
+func (s *StringLiteral) ExpressionNode()      {}
+func (s *StringLiteral) TokenLiteral() string { return s.Token.Literal }
+func (s *StringLiteral) String() string       { return s.Token.Literal }
+
+type PE struct {
+	Token    token.Token
+	Variable *Identifier
+	Operator string
+	Value    Expression
+}
+
+func (pe *PE) StatementNode()       {}
+func (pe *PE) TokenLiteral() string { return pe.Token.Literal }
+func (pe *PE) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(pe.TokenLiteral())
+	out.WriteString(" ")
+	out.WriteString(pe.Operator)
+	out.WriteString(" ")
+	out.WriteString(pe.Value.String())
+
+	return out.String()
+}

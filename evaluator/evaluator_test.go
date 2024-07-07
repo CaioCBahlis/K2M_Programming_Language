@@ -285,3 +285,17 @@ func TestClosures(t *testing.T) {
 
 	testIntegerObject(t, testEval(input), 4)
 }
+
+func TestStringConcatenation(t *testing.T) {
+	input := `"Hello" + " " + "World!"`
+
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not String. got=%T (%+V)", evaluated, evaluated)
+	}
+
+	if str.Value != "Hello World!" {
+		t.Errorf("wrong string value. got=%q instead of 'Hello,World!'", str.Value)
+	}
+}

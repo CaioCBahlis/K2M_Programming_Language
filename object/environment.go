@@ -11,11 +11,11 @@ func NewEnvironment() *Environment {
 
 func (env *Environment) Get(name string) (Object, bool) {
 	obj, ok := env.store[name]
-	//if not in this env, try the scoped one :)
-	// This is really good for any type of functions that deal with scoped parameters
-	// Functions and classes(TO DO) have to deal with local vars as well as parameters
+
 	if !ok && env.outer != nil {
 		obj, ok = env.outer.Get(name)
+		//if var not in this env, try the unscoped one :)
+		// Outer = "Global", Env="local"
 	}
 	return obj, ok
 }
@@ -26,6 +26,10 @@ func (env *Environment) Set(name string, obj Object) Object {
 }
 
 func ScopedEnv(outer *Environment) *Environment {
+	//Really Simple solution to scoped functions
+	// We create a new Environment (local) for the function,
+	// now, that function interacts only with the local scope of variables and function calls
+	// however, the function can still go outside and touch grass by using env.outer
 	env := NewEnvironment()
 	env.outer = outer
 

@@ -70,6 +70,24 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return args[0]
 		}
 		return applyFunction(function, args)
+
+	case *ast.StringLiteral:
+		return &object.String{Value: node.Value}
+
+	case *ast.PE:
+		value := Eval(node.Value, env).(*object.Integer)
+		if isError(value) {
+			return value
+		}
+
+		val, ok := env.Get(node.Variable.String())
+		if !ok {
+			fmt.Println("Error")
+			return value
+		}
+
+		env.Set(node.Variable.String(), &object.Integer{Value: value.Value + val.(*object.Integer).Value})
+
 	}
 
 	return nil
@@ -119,6 +137,10 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 	switch {
 	case left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
 		return evalIntegerInfixExpression(operator, left, right)
+	case right.Type() == object.STRING_OBJ && left.Type() == object.STRING_OBJ:
+		return evalStringInfixExpression(operator, left, right)
+	case operator == "*":
+		return evalStringInfixExpression(operator, left, right)
 	case operator == "==":
 		return nativeBoolToBooleanObject(left == right)
 	case operator == "!=":
@@ -153,6 +175,37 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 		return nativeBoolToBooleanObject(leftVal == rightVal)
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+	}
+}
+
+func evalStringInfixExpression(operator string, left object.Object, right object.Object) object.Object {
+	switch operator {
+	case "+":
+		return &object.String{Value: left.Inspect() + right.Inspect()}
+	case "*":
+		if left.Type() == right.Type() {
+			return newError("unknown operator: %s %s %s", left.Inspect(), operator, right.Inspect())
+		}
+		if left.Type() == object.INTEGER_OBJ && right.Type() == object.STRING_OBJ {
+			var string string
+			nloop := left.(*object.Integer).Value
+			for range nloop {
+				string += right.Inspect()
+			}
+			return &object.String{Value: string}
+		} else if right.Type() == object.INTEGER_OBJ && left.Type() == object.STRING_OBJ {
+			var string string
+			nloop := right.(*object.Integer).Value
+			for range nloop {
+				string += left.Inspect()
+			}
+			return &object.String{Value: string}
+		} else {
+			return newError(" %s operator not supported between %s and %s", operator, left.Type(), right.Type())
+		}
+
+	default:
+		return nil
 	}
 }
 
@@ -235,6 +288,7 @@ func isError(obj object.Object) bool {
 }
 
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
+
 	val, ok := env.Get(node.Value)
 	if !ok {
 		return newError("identifier not found: " + node.Value)
@@ -245,6 +299,7 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 
 func evalExpressions(exps []ast.Expression, env *object.Environment) []object.Object {
 	var result []object.Object
+	//just like evalBlock but for func parameters
 
 	for _, exp := range exps {
 		evaluated := Eval(exp, env)
@@ -261,6 +316,7 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 	if !ok {
 		return newError("not a function: %s", fn.Type())
 	}
+
 	extendedEnv := extendFunctionEnv(function, args)
 	evaluated := Eval(function.Body, extendedEnv)
 	return unwrapReturnValue(evaluated)
