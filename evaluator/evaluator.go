@@ -97,6 +97,24 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		case "/=":
 			env.Set(node.Variable.String(), &object.Integer{Value: val.(*object.Integer).Value / value.Value})
 		}
+	case *ast.ArrayLiteral:
+		elements := evalExpressions(node.Elements, env)
+		if len(elements) == 1 && isError(elements[0]) {
+			return elements[0]
+		}
+
+		return &object.Array{Elements: elements}
+	case *ast.IndexExpression:
+		left := Eval(node.Left, env)
+		if isError(left) {
+			return left
+		}
+
+		index := Eval(node.Index, env)
+		if isError(index) {
+			return index
+		}
+		return evalIndexExpression(left, index)
 
 	}
 
@@ -358,4 +376,20 @@ func unwrapReturnValue(obj object.Object) object.Object {
 		return returnValue.Value
 	}
 	return obj
+}
+
+func evalIndexExpression(array, index object.Object) object.Object {
+	arrayObject := array.(*object.Array)
+	idx := index.(*object.Integer).Value
+	max_index := int64(len(arrayObject.Elements) - 1)
+
+	if idx < 0 {
+		idx = max_index + idx + 1
+	}
+
+	if idx < 0 || idx > max_index { //Implement negative indexes
+		return NULL
+	}
+
+	return arrayObject.Elements[idx]
 }
