@@ -74,6 +74,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 	p.registerPrefix(token.LBRACE, p.parseHashLiteral)
+	p.registerPrefix(token.WHILE, p.parseWhileLoop)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -562,7 +563,7 @@ func (p *Parser) parseCompoundAssignStatement() ast.Statement {
 	return pleql
 }
 func (p *Parser) parseHashLiteral() ast.Expression {
-	hash := &ast.HashLiteral{Token: p.curToken}
+	hash := &ast.HashLiteral{Token: p.curToken} // "{"
 	hash.Pairs = make(map[ast.Expression]ast.Expression)
 
 	for !p.PeekTokenIs(token.RBRACE) {
@@ -588,4 +589,34 @@ func (p *Parser) parseHashLiteral() ast.Expression {
 	}
 
 	return hash
+}
+
+func (p *Parser) parseWhileLoop() ast.Expression {
+	WLoop := &ast.WhileLoop{Token: p.curToken}
+
+	if !p.PeekTokenIs(token.LPAREN) {
+		return nil
+	}
+	p.ShiftToken()
+
+	WLoop.Condition = p.parseExpression(LOWEST)
+
+	if !p.PeekTokenIs(token.RPAREN) {
+		return nil
+	}
+
+	p.ShiftToken()
+
+	if !p.PeekTokenIs(token.LBRACE) {
+		return nil
+	}
+
+	WLoop.Consequence = p.parseBlockStatement()
+
+	if !p.PeekTokenIs(token.RBRACE) {
+		return nil
+	}
+
+	return WLoop
+
 }

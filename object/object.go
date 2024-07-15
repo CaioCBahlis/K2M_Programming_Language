@@ -19,6 +19,7 @@ const (
 	ARRAY_OBJ        = "ARRAY"
 	BUILTIN_OBJ      = "BUILTIN"
 	HASH_OBJ         = "HASH"
+	VOID_OBJ         = ""
 )
 
 type ObjectType string
@@ -27,6 +28,10 @@ type BuiltinFunction func(args ...Object) Object
 type Object interface {
 	Type() ObjectType
 	Inspect() string
+}
+
+type Hashable interface {
+	HashKey() HashKey
 }
 
 type Integer struct {
@@ -143,7 +148,7 @@ func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
 func (b *Builtin) Inspect() string  { return "builtin function" }
 
 type Hash struct {
-	Pairs map[HashKey]HashPair
+	Pairs map[HashKey]HashPair // map[HashedKey]{map[PreHashedKey]value}
 }
 
 func (h *Hash) Type() ObjectType { return HASH_OBJ }
@@ -163,11 +168,17 @@ func (h *Hash) Inspect() string {
 }
 
 type HashPair struct {
-	Key   Object
+	Key   Object //actual Unhashed Key
 	Value Object
 }
 
 type HashKey struct {
-	Type  ObjectType
-	Value uint64
+	Type  ObjectType //string
+	Value uint64     //Hashed Key
 }
+
+type Void struct {
+}
+
+func (v *Void) Type() ObjectType { return VOID_OBJ }
+func (v *Void) Inspect() string  { return "" }

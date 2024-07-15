@@ -19,6 +19,7 @@ var keywords = map[string]TokenType{
 	"if":     IF,
 	"else":   ELSE,
 	"return": RETURN,
+	"while":  WHILE,
 }
 
 func LookupIdent(ident string) TokenType {
@@ -27,7 +28,8 @@ func LookupIdent(ident string) TokenType {
 	}
 	return IDENT
 	//there's no way of knowing if a word is the name of a var or a keyword
-	// here, we just if the word is on the keyword list, if not, it must be a var name
+	// here, we just if the word is on the keyword list, if not, it must be the ident
+	// of a var or function
 }
 
 const (
@@ -74,4 +76,6 @@ const (
 
 	TRUE  = "TRUE"
 	FALSE = "FALSE"
+
+	WHILE = "WHILE"
 )

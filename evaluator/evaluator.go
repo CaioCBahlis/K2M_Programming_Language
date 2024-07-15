@@ -11,6 +11,7 @@ var (
 	NULL  = &object.Null{}
 	TRUE  = &object.Boolean{Value: true}
 	FALSE = &object.Boolean{Value: false}
+	VOID  = &object.Void{}
 )
 
 func Eval(node ast.Node, env *object.Environment) object.Object {
@@ -102,8 +103,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		if len(elements) == 1 && isError(elements[0]) {
 			return elements[0]
 		}
-
 		return &object.Array{Elements: elements}
+
 	case *ast.IndexExpression:
 		left := Eval(node.Left, env)
 		if isError(left) {
@@ -115,7 +116,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return index
 		}
 		return evalIndexExpression(left, index)
-
+	case *ast.HashLiteral:
+		return evalHashLiteral(node, env)
 	}
 
 	return nil
@@ -378,18 +380,81 @@ func unwrapReturnValue(obj object.Object) object.Object {
 	return obj
 }
 
-func evalIndexExpression(array, index object.Object) object.Object {
-	arrayObject := array.(*object.Array)
-	idx := index.(*object.Integer).Value
-	max_index := int64(len(arrayObject.Elements) - 1)
+func evalIndexExpression(left, index object.Object) object.Object {
+	switch {
+	case left.Type() == object.ARRAY_OBJ && index.Type() == object.INTEGER_OBJ:
+		return evalArrayIndexExpression(left, index)
+	case left.Type() == object.HASH_OBJ:
+		return evalHashIndexExpression(left, index)
+	default:
+		return newError("index operator not supported for %s", left.Type())
+	}
+}
 
-	if idx < 0 {
-		idx = max_index + idx + 1
+func evalHashLiteral(node *ast.HashLiteral, env *object.Environment) object.Object {
+	pairs := make(map[object.HashKey]object.HashPair)
+
+	for keyNode, valueNode := range node.Pairs {
+		key := Eval(keyNode, env)
+		if isError(key) {
+			return key
+		}
+
+		hashkey, ok := key.(object.Hashable)
+		if !ok {
+			return newError("unusable as hash key: %s", key.Type())
+		}
+
+		value := Eval(valueNode, env)
+		if isError(value) {
+			return value
+		}
+
+		hashed := hashkey.HashKey()
+		pairs[hashed] = object.HashPair{Key: key, Value: value}
+	}
+	return &object.Hash{Pairs: pairs}
+}
+
+func evalArrayIndexExpression(left, index object.Object) object.Object {
+	array, ok := left.(*object.Array)
+	if !ok {
+		return newError("index operator not supported for %s", left.Type())
 	}
 
-	if idx < 0 || idx > max_index { //Implement negative indexes
+	idx, ok := index.(*object.Integer)
+	if !ok {
+		return newError("%s can't be used as index", index.Type())
+	}
+
+	max_index := int64(len(array.Elements) - 1)
+
+	if idx.Value < 0 {
+		idx.Value = max_index + idx.Value + 1
+	}
+
+	if idx.Value > max_index {
 		return NULL
 	}
 
-	return arrayObject.Elements[idx]
+	return array.Elements[idx.Value]
+}
+
+func evalHashIndexExpression(hash, index object.Object) object.Object {
+	hashObject, ok := hash.(*object.Hash)
+	if !ok {
+		return newError("unusable as hash index: %s", hash.Type())
+	}
+
+	key, ok := index.(object.Hashable)
+	if !ok {
+		return newError("unusable as hash key: %s", index.Type())
+	}
+
+	pair, ok := hashObject.Pairs[key.HashKey()]
+	if !ok {
+		return NULL
+	}
+
+	return pair.Value
 }

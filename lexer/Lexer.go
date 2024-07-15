@@ -138,7 +138,6 @@ func (l *Lexer) readString() string {
 	}
 
 	return l.input[position:l.position]
-
 }
 
 func newToken(tokenType token.TokenType, ch byte) token.Token {
