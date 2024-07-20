@@ -28,6 +28,7 @@ func TestNextToken(t *testing.T) {
 			"foo bar"
 			[1,2];
 			{"foo":"bar"}
+			while (2 > 1){print(5);};
 			`
 
 	tests := []struct {
@@ -120,6 +121,20 @@ func TestNextToken(t *testing.T) {
 		{token.COLON, ":"},
 		{token.STRING, "bar"},
 		{token.RBRACE, "}"},
+		{token.WHILE, "while"},
+		{token.LPAREN, "("},
+		{token.INT, "2"},
+		{token.GT, ">"},
+		{token.INT, "1"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.IDENT, "print"},
+		{token.LPAREN, "("},
+		{token.INT, "5"},
+		{token.RPAREN, ")"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+		{token.SEMICOLON, ";"},
 		{token.EOF, ""},
 	}
 

@@ -122,6 +122,7 @@ func (p *Parser) ParseProgram() *ast.Program {
 		if stmt != nil {
 			program.Statements = append(program.Statements, stmt)
 		}
+
 		p.ShiftToken()
 	}
 
@@ -308,14 +309,13 @@ func (p *Parser) parseIfExpression() ast.Expression {
 	if !p.expectPeek(token.LPAREN) {
 		return nil
 	}
-
 	p.ShiftToken()
+
 	expression.Condition = p.parseExpression(LOWEST)
 
 	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}
-
 	if !p.expectPeek(token.LBRACE) {
 		return nil
 	}
@@ -594,29 +594,26 @@ func (p *Parser) parseHashLiteral() ast.Expression {
 func (p *Parser) parseWhileLoop() ast.Expression {
 	WLoop := &ast.WhileLoop{Token: p.curToken}
 
-	if !p.PeekTokenIs(token.LPAREN) {
+	if !p.expectPeek(token.LPAREN) {
 		return nil
 	}
 	p.ShiftToken()
 
 	WLoop.Condition = p.parseExpression(LOWEST)
 
-	if !p.PeekTokenIs(token.RPAREN) {
+	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}
 
-	p.ShiftToken()
-
-	if !p.PeekTokenIs(token.LBRACE) {
+	if !p.expectPeek(token.LBRACE) {
 		return nil
 	}
 
 	WLoop.Consequence = p.parseBlockStatement()
 
-	if !p.PeekTokenIs(token.RBRACE) {
+	if !p.curTokenIs(token.RBRACE) {
 		return nil
 	}
 
 	return WLoop
-
 }

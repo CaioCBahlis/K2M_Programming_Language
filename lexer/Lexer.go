@@ -3,13 +3,14 @@ package lexer
 import (
 	"MyInterpreter/token"
 	_ "fmt"
+	"unicode"
 )
 
 type Lexer struct {
-	input        string //What It's gonna be reading
-	position     int    // Where the lexer is in the input
-	readPosition int    // pointer to the next char being read
-	ch           byte   // Actual char that is being read
+	input        string // What It's gonna be reading
+	position     int    // Lexer's reading position relative to the input
+	readPosition int    // Pointer to the next char being read
+	ch           byte   // Char being read
 }
 
 func (l *Lexer) readChar() {
@@ -105,7 +106,7 @@ func (l *Lexer) readIdentifier() string {
 }
 
 func (l *Lexer) skipWhiteSpace() {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+	for unicode.IsSpace(rune(l.ch)) {
 		l.readChar()
 	}
 
@@ -136,7 +137,6 @@ func (l *Lexer) readString() string {
 			break
 		}
 	}
-
 	return l.input[position:l.position]
 }
 

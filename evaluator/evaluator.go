@@ -118,9 +118,12 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalIndexExpression(left, index)
 	case *ast.HashLiteral:
 		return evalHashLiteral(node, env)
+	case *ast.WhileLoop:
+		return evalWhileLoop(node, env)
 	}
 
 	return nil
+
 }
 
 func evalProgram(program *ast.Program, env *object.Environment) object.Object {
@@ -457,4 +460,21 @@ func evalHashIndexExpression(hash, index object.Object) object.Object {
 	}
 
 	return pair.Value
+}
+
+func evalWhileLoop(node *ast.WhileLoop, env *object.Environment) object.Object {
+	var WhileTrue object.Object
+	var evaluated object.Object
+
+	WhileTrue = Eval(node.Condition, env)
+
+	if isError(WhileTrue) {
+		return WhileTrue
+	}
+
+	for isTruthy(Eval(node.Condition, env)) {
+		evaluated = Eval(node.Consequence, env)
+	}
+
+	return evaluated
 }

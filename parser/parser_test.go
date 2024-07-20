@@ -548,6 +548,11 @@ func TestIfExpression(t *testing.T) {
 	}
 }
 
+func TestWhileParsing(t *testing.T) {
+	input := `while (2 > 1){ print(2);}`
+	fmt.Println(input)
+}
+
 func TestFunctionLiteralParsing(t *testing.T) {
 	input := `fn(x, y) {x + y; }`
 
