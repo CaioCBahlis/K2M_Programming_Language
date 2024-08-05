@@ -180,16 +180,16 @@ func (b *Boolean) ExpressionNode()      {}
 func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
 func (b *Boolean) String() string       { return b.Token.Literal }
 
-type IfExpression struct{
-	Token token.Token
-	Condition Expression
+type IfExpression struct {
+	Token       token.Token
+	Condition   Expression
 	Consequence *BlockStatement
 	Alternative *BlockStatement
 }
 
-func (ie *IfExpression) ExpressionNode() {}
-func (ie *IfExpression) TokenLiteral() string {return ie.Token.Literal}
-func (ie *IfExpression) String() string{
+func (ie *IfExpression) ExpressionNode()      {}
+func (ie *IfExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *IfExpression) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("if ")
@@ -198,7 +198,7 @@ func (ie *IfExpression) String() string{
 	out.WriteString(ie.Consequence.String())
 	out.WriteString(" ")
 
-	if ie.Alternative != nil{
+	if ie.Alternative != nil {
 		out.WriteString("else ")
 		out.WriteString(ie.Alternative.String())
 		out.WriteString(" ")
@@ -207,37 +207,36 @@ func (ie *IfExpression) String() string{
 	return out.String()
 }
 
-type BlockStatement struct{
-	Token token.Token
+type BlockStatement struct {
+	Token      token.Token
 	Statements []Statement
 }
 
-func (bs *BlockStatement) statementNode() {}
-func (bs *BlockStatement) TokenLiteral() string {return bs.Token.Literal}
-func (bs *BlockStatement) String() string{
+func (bs *BlockStatement) statementNode()       {}
+func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
+func (bs *BlockStatement) String() string {
 	var out bytes.Buffer
 
-	for _, s := range bs.Statements{
+	for _, s := range bs.Statements {
 		out.WriteString(s.String())
 	}
 
 	return out.String()
 }
 
-
-type FunctionLiteral struct{
-	Token token.Token
+type FunctionLiteral struct {
+	Token      token.Token
 	Parameters []*Identifier
-	Body *BlockStatement
+	Body       *BlockStatement
 }
 
-func (fl *FunctionLiteral) ExpressionNode(){}
-func (fl *FunctionLiteral) TokenLiteral() string {return fl.Token.Literal}
-func (fl *FunctionLiteral) String() string{
+func (fl *FunctionLiteral) ExpressionNode()      {}
+func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
+func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer
 
 	params := []string{}
-	for _, p := range fl.Parameters{
+	for _, p := range fl.Parameters {
 		params = append(params, p.String())
 	}
 
@@ -246,23 +245,24 @@ func (fl *FunctionLiteral) String() string{
 	out.WriteString(strings.Join(params, ","))
 	out.WriteString(")")
 	out.WriteString(fl.Body.String())
+	out.WriteString("/n}")
 
 	return out.String()
 }
 
-type CallExpression struct{
-	Token token.Token
-	Function Expression
+type CallExpression struct {
+	Token     token.Token
+	Function  Expression
 	Arguments []Expression
 }
 
-func (ce *CallExpression) ExpressionNode() {}
-func (ce *CallExpression) TokenLiteral () string {return ce.Token.Literal}
-func (ce *CallExpression) String() string{
+func (ce *CallExpression) ExpressionNode()      {}
+func (ce *CallExpression) TokenLiteral() string { return ce.Token.Literal }
+func (ce *CallExpression) String() string {
 	var out bytes.Buffer
 
 	args := []string{}
-	for _, a := range ce.Arguments{
+	for _, a := range ce.Arguments {
 		args = append(args, a.String())
 	}
 
@@ -274,3 +274,118 @@ func (ce *CallExpression) String() string{
 	return out.String()
 }
 
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
+func (s *StringLiteral) ExpressionNode()      {}
+func (s *StringLiteral) TokenLiteral() string { return s.Token.Literal }
+func (s *StringLiteral) String() string       { return s.Token.Literal }
+
+type CompoundAssignment struct {
+	Token    token.Token
+	Variable *Identifier
+	Operator string
+	Value    Expression
+}
+
+func (pe *CompoundAssignment) StatementNode()       {}
+func (pe *CompoundAssignment) TokenLiteral() string { return pe.Token.Literal }
+func (pe *CompoundAssignment) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(pe.TokenLiteral())
+	out.WriteString(" ")
+	out.WriteString(pe.Operator)
+	out.WriteString(" ")
+	out.WriteString(pe.Value.String())
+
+	return out.String()
+}
+
+type ArrayLiteral struct {
+	Token    token.Token
+	Elements []Expression
+}
+
+func (al *ArrayLiteral) ExpressionNode()      {}
+func (al *ArrayLiteral) TokenLiteral() string { return al.Token.Literal }
+func (al *ArrayLiteral) String() string {
+	var out bytes.Buffer
+
+	elements := []string{}
+	out.WriteString("[")
+
+	for _, elem := range al.Elements {
+		elements = append(elements, elem.String())
+	}
+
+	out.WriteString(strings.Join(elements, ","))
+	out.WriteString("]")
+
+	return out.String()
+}
+
+type IndexExpression struct {
+	Token token.Token
+	Left  Expression
+	Index Expression
+}
+
+func (ie *IndexExpression) ExpressionNode()      {}
+func (ie *IndexExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *IndexExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString("[")
+	out.WriteString(ie.Index.String())
+	out.WriteString("]")
+	out.WriteString(")")
+
+	return out.String()
+}
+
+type HashLiteral struct {
+	Token token.Token
+	Pairs map[Expression]Expression
+}
+
+func (hl *HashLiteral) ExpressionNode()      {}
+func (hl *HashLiteral) TokenLiteral() string { return hl.TokenLiteral() }
+func (hl *HashLiteral) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("{")
+	pairs := []string{}
+	for key, value := range hl.Pairs {
+		pairs = append(pairs, key.String()+":"+value.String())
+	}
+
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+	return out.String()
+}
+
+type WhileLoop struct {
+	Token       token.Token
+	Condition   Expression
+	Consequence *BlockStatement
+}
+
+func (wl *WhileLoop) ExpressionNode()      {}
+func (wl *WhileLoop) TokenLiteral() string { return wl.TokenLiteral() }
+func (wl *WhileLoop) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("while")
+	out.WriteString("(")
+	out.WriteString(wl.Condition.String())
+	out.WriteString("){")
+	out.WriteString(wl.Consequence.String())
+	out.WriteString("}")
+
+	return out.String()
+}
