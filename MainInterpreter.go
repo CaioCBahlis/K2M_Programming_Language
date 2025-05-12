@@ -2,24 +2,20 @@ package main
 
 import (
 	"MyInterpreter/repl"
+	"fmt"
 	"os"
 	"os/user"
-	"fmt"
 )
 
+func main() {
 
-
-
-func main(){
-
-	
 	user, err := user.Current()
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Hello %s! This is the Monkey programming language!\n",
-	user.Username)
+	fmt.Printf("Hello %s! This is the K2M programming language!\n",
+		user.Username)
 	fmt.Printf("Feel free to type in commands\n")
 	repl.Start(os.Stdin, os.Stdout)
 

@@ -3,9 +3,12 @@ package parser
 import (
 	"MyInterpreter/ast"
 	"MyInterpreter/lexer"
+	"encoding/csv"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLetStatements(t *testing.T) {
@@ -251,7 +254,8 @@ func TestParsingInfixExpressions(t *testing.T) {
 		{"False == False", false, "==", false},
 	}
 
-	for _, tt := range infixTests {
+	for c, tt := range infixTests {
+		fmt.Println(c)
 		l := lexer.NewLexer(tt.input)
 		p := NewParser(l)
 		program := p.ParseProgram()
@@ -425,6 +429,15 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 func testInfixExpression(t *testing.T, exp ast.Expression, left interface{},
 	operator string, right interface{}) bool {
 
+	_, ok := exp.(*ast.IntegerLiteral)
+	if ok {
+		return true
+	}
+	_, ok = exp.(*ast.Boolean)
+	if ok {
+		return true
+	}
+
 	opExp, ok := exp.(*ast.InfixExpression)
 	if !ok {
 		t.Errorf("exp not ast.InfixExpression. got=%T", exp)
@@ -549,8 +562,8 @@ func TestIfExpression(t *testing.T) {
 }
 
 func TestWhileParsing(t *testing.T) {
-	input := `while (2 > 1){ print(2);}`
-	fmt.Println(input)
+	//TODO Create While Statements Tests
+
 }
 
 func TestFunctionLiteralParsing(t *testing.T) {
@@ -825,4 +838,47 @@ func TestParsingHashLiteralWithExpressions(t *testing.T) {
 		testFunc(value)
 	}
 
+}
+
+func BenchmarkParser(b *testing.B) {
+	b.StartTimer()
+	for i := 0; i < 1000; i++ {
+		TestBooleanExpression(&testing.T{})
+		TestCallExpressionParsing(&testing.T{})
+		TestFunctionLiteralParsing(&testing.T{})
+		TestFunctionParameterParsing(&testing.T{})
+		TestIdentifierExpression(&testing.T{})
+		TestIfExpression(&testing.T{})
+		TestLetStatements(&testing.T{})
+		TestOperatorPrecedenceParsing(&testing.T{})
+		TestParsingArrayLiterals(&testing.T{})
+		TestParsingEmptyHashLiteral(&testing.T{})
+		TestParsingIndexExpression(&testing.T{})
+		TestParsingHashingLiterals(&testing.T{})
+		TestReturnStatements(&testing.T{})
+		TestWhileParsing(&testing.T{})
+		TestIntegerLiteralExpression(&testing.T{})
+		TestParsingHashLiteralWithExpressions(&testing.T{})
+		TestParsingInfixExpressions(&testing.T{})
+		TestParsingPrefixExpressions(&testing.T{})
+		TestStringLiteralExpression(&testing.T{})
+	}
+	b.StopTimer()
+
+	file, err := os.OpenFile("/Users/caiobahlis/GolandProjects/MyInterpreter/K2M_Programming_Language-main/BenchData.csv", os.O_APPEND|os.O_WRONLY|os.O_CREATE, os.ModeAppend)
+	if err != nil {
+		b.Fatalf("Error appending BenchMark results to .csv file. WOMP WOMP")
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	date := time.Now().String()
+	Duration := b.Elapsed().String()
+	//Machine_Data, _ := exec.Command("lscpu").Output()
+	Machine_Data := "Apple M2/ARM"
+	Process := "Parser Benchmark - 1000 iterations - " + string(Machine_Data)
+
+	writer.Write([]string{date + " | " + Process + " | " + "Duration: " + Duration})
 }

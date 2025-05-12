@@ -2,8 +2,10 @@ package lexer
 
 import (
 	"MyInterpreter/token"
-	"fmt"
+	"encoding/csv"
+	"os"
 	"testing"
+	"time"
 )
 
 func TestNextToken(t *testing.T) {
@@ -142,7 +144,6 @@ func TestNextToken(t *testing.T) {
 
 	for i, tt := range tests {
 		tok := l.NextToken() //Gets next char tokenized
-		fmt.Println(i, tok, l.readPosition)
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
@@ -155,4 +156,30 @@ func TestNextToken(t *testing.T) {
 		}
 	}
 
+}
+
+func BenchmarkLexer(b *testing.B) {
+	b.StartTimer()
+	for i := 0; i < 1000; i++ {
+		TestNextToken(&testing.T{})
+	}
+
+	b.StopTimer()
+
+	file, err := os.OpenFile("/Users/caiobahlis/GolandProjects/MyInterpreter/K2M_Programming_Language-main/BenchData.csv", os.O_APPEND|os.O_WRONLY|os.O_CREATE, os.ModeAppend)
+	if err != nil {
+		b.Fatalf("Error appending BenchMark results to .csv file. WOMP WOMP")
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	date := time.Now().String()
+	Duration := b.Elapsed().String()
+	//Machine_Data, _ := exec.Command("lscpu").Output()
+	Machine_Data := "Apple M2/ARM"
+	Process := "Lexer Benchmark - 1000 iterations - " + string(Machine_Data)
+
+	writer.Write([]string{date + " | " + Process + " | " + "Duration: " + Duration})
 }

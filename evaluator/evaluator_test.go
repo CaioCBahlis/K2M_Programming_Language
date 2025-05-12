@@ -4,7 +4,10 @@ import (
 	"MyInterpreter/lexer"
 	"MyInterpreter/object"
 	"MyInterpreter/parser"
+	"encoding/csv"
+	"os"
 	"testing"
+	"time"
 )
 
 func TestEvalIntegerExpression(t *testing.T) {
@@ -489,4 +492,44 @@ func TestHashIndexExpression(t *testing.T) {
 			testNullObject(t, evaluated)
 		}
 	}
+}
+
+func BenchmarkEvaluator(b *testing.B) {
+	b.StartTimer()
+	for i := 0; i < 1000; i++ {
+		TestReturnStatements(&testing.T{})
+		TestErrorHandling(&testing.T{})
+		TestLetStatements(&testing.T{})
+		TestArrayIndexExpression(&testing.T{})
+		TestArrayLiterals(&testing.T{})
+		TestBangOperator(&testing.T{})
+		TestBuiltinFunctions(&testing.T{})
+		TestClosures(&testing.T{})
+		TestEvalBooleanExpression(&testing.T{})
+		TestEvalIntegerExpression(&testing.T{})
+		TestFunctionApplication(&testing.T{})
+		TestFunctionObject(&testing.T{})
+		TestHashIndexExpression(&testing.T{})
+		TestHashLiterals(&testing.T{})
+		TestIfElseExpressions(&testing.T{})
+		TestStringConcatenation(&testing.T{})
+	}
+	b.StopTimer()
+
+	file, err := os.OpenFile("/Users/caiobahlis/GolandProjects/MyInterpreter/K2M_Programming_Language-main/BenchData.csv", os.O_APPEND|os.O_WRONLY|os.O_CREATE, os.ModeAppend)
+	if err != nil {
+		b.Fatalf("Error appending BenchMark results to .csv file. WOMP WOMP")
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	date := time.Now().String()
+	Duration := b.Elapsed().String()
+	//Machine_Data, _ := exec.Command("lscpu").Output()
+	Machine_Data := "Apple M2/ARM"
+	Process := "Evaluator Benchmark - 1000 iterations - " + string(Machine_Data)
+
+	writer.Write([]string{date + " | " + Process + " | " + "Duration: " + Duration})
 }

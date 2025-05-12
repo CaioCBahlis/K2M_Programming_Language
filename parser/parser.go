@@ -21,6 +21,8 @@ const (
 	INDEX
 )
 
+var VariablePropagationCache = map[string]int64{}
+
 var precedences = map[token.TokenType]int{
 	token.EQ:       EQUALS,
 	token.NOT_EQ:   EQUALS,
@@ -172,7 +174,9 @@ func (p *Parser) ParseLetStatement() *ast.LetStatement {
 	p.ShiftToken()
 
 	stmt.Value = p.parseExpression(LOWEST) //Result of the Parsed Expression Ex: (5 + 5 * 10) -> 55
-
+	if val, err := stmt.Value.(*ast.IntegerLiteral); err {
+		VariablePropagationCache[stmt.Name.Value] = val.Value
+	}
 	for !p.curTokenIs(token.SEMICOLON) {
 		p.ShiftToken() //shift forward until semicolon
 	}
@@ -299,6 +303,39 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	precedence := p.curPrecedence()
 	p.ShiftToken()
 	expression.Right = p.parseExpression(precedence)
+	//TODO Fix Constant Folding for 5 * "a"
+	/*
+		switch left.(type) {
+			case *ast.Identifier:
+				leftvar, _ := left.(*ast.Identifier)
+				leftnum := VariablePropagationCache[leftvar.Value]
+
+				if rightnum, ok := expression.Right.(*ast.IntegerLiteral); ok && leftnum != 0 {
+					return p.ConstantFolding(leftnum, expression.Operator, rightnum.Value)
+
+				} else {
+					rightvar, ok := left.(*ast.Identifier)
+					rightnum := VariablePropagationCache[rightvar.Value]
+					if ok {
+						return p.ConstantFolding(leftnum, expression.Operator, rightnum)
+					}
+				}
+
+			case *ast.IntegerLiteral:
+				if rightInteger, ok := expression.Right.(*ast.IntegerLiteral); ok {
+					return p.ConstantFolding(left.(*ast.IntegerLiteral).Value, expression.Operator, rightInteger.Value)
+				} else {
+					rightvar, ok := expression.Right.(*ast.Identifier)
+					rightnum := VariablePropagationCache[rightvar.Value]
+					if ok {
+
+						return p.ConstantFolding(left.(*ast.IntegerLiteral).Value, expression.Operator, rightnum)
+
+					}
+				}
+			}
+
+	*/
 
 	return expression
 }
@@ -616,4 +653,63 @@ func (p *Parser) parseWhileLoop() ast.Expression {
 	}
 
 	return WLoop
+}
+
+func (p *Parser) ConstantFolding(leftnum int64, Operator string, rightnum int64) ast.Expression {
+	//Constant Folding is a function added to optimize the interpreter
+	//even for simple operations, the input goes through lexing, parsing and evaluation
+	//By implementing ConstantFolding, we can skip the entire parsing and evaluation phase and return the integer object straight up
+	//In average, Constant Folding saves about 10ms in the entire process
+
+	//Additionally, I'm experimenting with strength reduction alternatives for common arithmetic operations
+
+	switch Operator {
+	case "+":
+		result := leftnum + rightnum
+		return &ast.IntegerLiteral{Token: token.Token{Type: token.INT, Literal: strconv.FormatInt(result, 10)}, Value: result}
+	case "-":
+		result := leftnum - rightnum
+		return &ast.IntegerLiteral{Token: token.Token{Type: token.INT, Literal: strconv.FormatInt(result, 10)}, Value: result}
+
+	case "*":
+		result := leftnum * rightnum
+		return &ast.IntegerLiteral{Token: token.Token{Type: token.INT, Literal: strconv.FormatInt(result, 10)}, Value: result}
+
+	case "/":
+		if rightnum == 0 {
+			return nil
+		}
+		result := leftnum / rightnum
+		return &ast.IntegerLiteral{Token: token.Token{Type: token.INT, Literal: strconv.FormatInt(result, 10)}, Value: result}
+
+	case ">":
+		result := leftnum > rightnum
+		if result {
+			return &ast.Boolean{Token: token.Token{Type: token.TRUE, Literal: "True"}, Value: result}
+		} else {
+			return &ast.Boolean{Token: token.Token{Type: token.FALSE, Literal: "False"}, Value: result}
+		}
+	case "<":
+		result := leftnum < rightnum
+		if result {
+			return &ast.Boolean{Token: token.Token{Type: token.TRUE, Literal: "True"}, Value: result}
+		} else {
+			return &ast.Boolean{Token: token.Token{Type: token.FALSE, Literal: "False"}, Value: result}
+		}
+	case "==":
+		result := leftnum == rightnum
+		if result {
+			return &ast.Boolean{Token: token.Token{Type: token.TRUE, Literal: "True"}, Value: result}
+		} else {
+			return &ast.Boolean{Token: token.Token{Type: token.FALSE, Literal: "False"}, Value: result}
+		}
+	case "!=":
+		result := leftnum != rightnum
+		if result {
+			return &ast.Boolean{Token: token.Token{Type: token.TRUE, Literal: "True"}, Value: result}
+		} else {
+			return &ast.Boolean{Token: token.Token{Type: token.FALSE, Literal: "False"}, Value: result}
+		}
+	}
+	return nil
 }

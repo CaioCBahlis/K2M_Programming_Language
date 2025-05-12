@@ -221,20 +221,22 @@ func evalStringInfixExpression(operator string, left object.Object, right object
 		if left.Type() == right.Type() {
 			return newError("unknown operator: %s %s %s", left.Inspect(), operator, right.Inspect())
 		}
+
 		if left.Type() == object.INTEGER_OBJ && right.Type() == object.STRING_OBJ {
-			var string string
+			var str string
 			nloop := left.(*object.Integer).Value
 			for range nloop {
-				string += right.Inspect()
+				str += right.Inspect()
 			}
-			return &object.String{Value: string}
+			return &object.String{Value: str}
 		} else if right.Type() == object.INTEGER_OBJ && left.Type() == object.STRING_OBJ {
-			var string string
+
+			var str string
 			nloop := right.(*object.Integer).Value
 			for range nloop {
-				string += left.Inspect()
+				str += left.Inspect()
 			}
-			return &object.String{Value: string}
+			return &object.String{Value: str}
 		} else {
 			return newError(" %s operator not supported between %s and %s", operator, left.Type(), right.Type())
 		}
