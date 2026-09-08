@@ -199,7 +199,7 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 	case "/":
 		return &object.Integer{Value: leftVal / rightVal}
 	case "**":
-		return &object.Integer{Value: int64(mymath.Exponentiate(leftVal, rightVal))}
+		return &object.Integer{Value: int64(mymath.Exponentiate(float64(leftVal), rightVal))}
 	case ">":
 		return nativeBoolToBooleanObject(leftVal > rightVal)
 	case "<":
